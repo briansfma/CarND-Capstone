@@ -1,0 +1,45 @@
+Bug report:
+
+AttributeError: 'SteeringReport' object has no attribute 'steering_wheel_angle_cmd'
+2020-04-23T21:58:15Z <Thread at 0x7f98b439f158: <bound method Server._handle_event_internal of <socketio.server.Server object at 0x7f98fbd9ab50>>(<socketio.server.Server object at 0x7f98fbd9ab50>, '5852016d5b48409ca3bed94979624b4f', [u'control', {u'brake': 50.60758, u'throttle': 0.0, '/', None)> failed with AttributeError
+
+Traceback (most recent call last):
+  File "src/gevent/greenlet.py", line 766, in gevent._greenlet.Greenlet.run
+  File "/home/briansfma/.local/lib/python2.7/site-packages/socketio/server.py", line 651, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/briansfma/.local/lib/python2.7/site-packages/socketio/server.py", line 680, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/briansfma/Udacity/CarND-Capstone/ros/src/styx/server.py", line 36, in control
+    bridge.publish_controls(data)
+  File "/home/briansfma/Udacity/CarND-Capstone/ros/src/styx/bridge.py", line 147, in publish_controls
+    self.publishers['steering_report'].publish(self.create_steer(steering))
+  File "/home/briansfma/Udacity/CarND-Capstone/ros/src/styx/bridge.py", line 104, in create_steer
+    st.steering_wheel_angle_cmd = val * math.pi/180.
+
+Checking the message definition with
+
+rosmsg info dbw_mkz_msgs/SteeringReport
+
+Outputs the following:
+
+uint8 CMD_ANGLE=0
+uint8 CMD_TORQUE=1
+std_msgs/Header header
+  uint32 seq
+  time stamp
+  string frame_id
+float32 steering_wheel_angle
+float32 steering_wheel_cmd
+float32 steering_wheel_torque
+uint8 steering_wheel_cmd_type
+float32 speed
+bool enabled
+bool override
+bool timeout
+bool fault_wdc
+bool fault_bus1
+bool fault_bus2
+bool fault_calibration
+bool fault_power
+
+Maybe the package has been updated since the Udacity course was created, but it appears that 'steering_wheel_angle_cmd' has been deprecated and replaced with 'steering_wheel_cmd'. Changing the variable name at line 104 does in fact resolve the warning messages.
