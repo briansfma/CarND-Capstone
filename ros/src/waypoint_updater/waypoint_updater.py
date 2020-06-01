@@ -54,8 +54,9 @@ class WaypointUpdater(object):
         rate = rospy.Rate(50)
         while not rospy.is_shutdown():
             if self.pose and self.waypoint_tree:
-                # Get closest waypoint
+                # Get closest waypoint to car's current position
                 closest_waypoint_idx = self.get_closest_waypoint_idx()
+                # Generate updated waypoint list for car based on that nearest waypoint
                 self.publish_waypoints(closest_waypoint_idx)
             rate.sleep()
 
@@ -95,30 +96,39 @@ class WaypointUpdater(object):
         farthest_idx = closest_idx + LOOKAHEAD_WPS
         new_waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
 
-        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
-            lane.waypoints = new_waypoints
+        # Case 1: Traffic light is red
+        if (0 < self.stopline_wp_idx < farthest_idx):
+            # Build new waypoints with speed adjusted for environment
+            temp = []
+
+            # Lower speed to stop at the line (model deceleration wanted)
+            for i, wp in enumerate(new_waypoints):
+                # Calc velocity curve to smoothly stop the car
+                # Four points back so car stops at line
+                stop_idx = max(self.stopline_wp_idx - closest_idx - 4, 0)
+
+                dist = self.distance(new_waypoints, i, stop_idx)
+                vel = 0.4 * dist                       # arbitrary value to work with MAX_DECEL
+                if vel < 0.5:
+                    vel = 0.
+
+                temp.append(self.generate_waypoint(wp, min(vel, wp.twist.twist.linear.x)))
+
+                lane.waypoints = temp
+        # Case 2: Nothing in the way, raise speed to match waypoint command
         else:
-            lane.waypoints = self.adjust_waypoints(new_waypoints, closest_idx)
+            lane.waypoints = new_waypoints
+
+        # rospy.logwarn("VEL_CMD: {}".format(temp[0].twist.twist.linear.x))
 
         return lane
 
-    def adjust_waypoints(self, waypoints, closest_idx):
-        temp = []
-        for i, wp in enumerate(waypoints):
+    def generate_waypoint(self, waypoint, vel_cmd):
+        p = Waypoint()
+        p.pose = waypoint.pose
+        p.twist.twist.linear.x = vel_cmd
 
-            p = Waypoint()
-            p.pose = wp.pose
-
-            stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0) # Two waypoints back so car stops at line
-            dist = self.distance(waypoints, i, stop_idx)
-            vel = 5 * dist                       # 5 is MAX_DECEL
-            if vel < 1.:
-                vel = 0.
-
-            p.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
-            temp.append(p)
-
-        return temp
+        return p
 
     def pose_cb(self, msg):
         self.pose = msg
@@ -130,7 +140,7 @@ class WaypointUpdater(object):
             self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg):
-        self.stopline_wp_idx = msg
+        self.stopline_wp_idx = msg.data
         pass
 
     def obstacle_cb(self, msg):
