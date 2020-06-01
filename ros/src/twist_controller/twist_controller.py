@@ -11,13 +11,13 @@ class Controller(object):
     def __init__(self, vehicle_mass, fuel_capacity, brake_deadband, decel_limit, accel_limit,
     			 wheel_radius, wheel_base, steer_ratio, max_lat_accel, max_steer_angle):
         # TODO: Implement
-        self.yaw_controller = YawController(wheel_base, steer_ratio, 0.1, max_lat_accel, max_steer_angle)
+        self.yaw_controller = YawController(wheel_base, 1.2*steer_ratio, 0.1, max_lat_accel, max_steer_angle)
 
         kp = 0.3
         ki = 0.1
         kd = 0.
         mn = 0.		# Min throttle value
-        mx = 0.2	# Max throttle value
+        mx = 0.5	# Max throttle value
         self.throttle_controller = PID(kp, ki, kd, mn, mx)
 
         tau = 0.5
@@ -40,10 +40,10 @@ class Controller(object):
 
         current_vel = self.velocity_lpf.filt(current_vel)
 
-        rospy.loginfo("angular_vel: {0}".format(angular_vel))
-        rospy.loginfo("Target linear_vel: {0}".format(linear_vel))
-        rospy.loginfo("current_vel: {0}".format(current_vel))
-        rospy.loginfo("Filtered vel: {0}".format(self.velocity_lpf.get()))
+        # rospy.loginfo("angular_vel: {0}".format(angular_vel))
+        # rospy.loginfo("Target linear_vel: {0}".format(linear_vel))
+        # rospy.loginfo("current_vel: {0}".format(current_vel))
+        # rospy.loginfo("Filtered vel: {0}".format(self.velocity_lpf.get()))
 
         steering = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel)
 
@@ -61,10 +61,10 @@ class Controller(object):
         	throttle = 0
         	brake = 400		# Units Nm. Keeps the car stopped at a light.
 
-        elif throttle < 0.1 and vel_error < 0:
+        elif vel_error < 0:
         	throttle = 0
         	decel = max(vel_error, self.decel_limit)
-        	brake = abs(decel) * self.vehicle_mass*self.wheel_radius
+        	brake = abs(decel) * self.vehicle_mass*self.wheel_radius * 0.9
 
         # Return throttle, brake, steer
         return throttle, brake, steering
