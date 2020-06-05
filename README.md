@@ -25,36 +25,7 @@ git clone https://github.com/briansfma/CarND-Capstone.git
 cd CarND-Capstone
 pip install -r requirements.txt
 ```
-3. Install additional packages
-```bash
-sudo apt-get install protobuf-compiler python-pil python-lxml python-tk
-```
-4. Navigate to the `tl_detector` subdirectory
-```bash
-cd ros/src/tl_detector/
-```
-5. Clone Tensorflow's models repository
-```bash
-git clone https://github.com/tensorflow/models.git
-```
-6. Checkout a compatible branch (the newest Object Detection API won't work with Tensorflow 1.3)
-```bash
-cd models
-git checkout f7e99c0
-```
-7. Navigate to the `research` folder to begin building the API
-```bash
-cd research
-protoc object_detection/protos/*.proto --python_out=.
-export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
-```
-8. If step 7 executed without errors, then build the API
-```bash
-python object_detection/builders/model_builder_test.py
-```
-9. If step 7 failed, it may be due to an out of date `libprotoc`. Please make sure you have `libprotoc==3.0.0` or higher and try again.
-
-10. Once the Object Detection API is set up, make and run styx
+3. Once the Object Detection API is set up, make and run styx
 ```bash
 cd ../../../.. (or cd CarND-Capstone/ros)
 catkin_make
