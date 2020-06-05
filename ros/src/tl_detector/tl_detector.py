@@ -14,15 +14,15 @@ import yaml
 import csv
 
 STATE_COUNT_THRESHOLD = 3
-FOLDER = "/home/briansfma/Documents/Udacity/CarND-Capstone/frames/" # set dir for saving data
 
-csvfile = 0
-writer = 0
-frame_num = 0
+# FOLDER = "frames/" # set dir for saving data
+# csvfile = 0
+# writer = 0
+# frame_num = 0
 
 class TLDetector(object):
     def __init__(self):
-        global csvfile, writer
+        # global csvfile, writer
 
         rospy.init_node('tl_detector')
 
@@ -48,6 +48,7 @@ class TLDetector(object):
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
+        self.is_site = self.config['is_site']
 
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
@@ -60,9 +61,10 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
 
-        csvfile = open(FOLDER + 'data.csv', 'w')
-        writer = csv.writer(csvfile, delimiter=',', quotechar='"',
-                            quoting=csv.QUOTE_MINIMAL)
+        # # For classifier development - write out light states to CSV file
+        # csvfile = open(FOLDER + 'data.csv', 'w')
+        # writer = csv.writer(csvfile, delimiter=',', quotechar='"',
+        #                     quoting=csv.QUOTE_MINIMAL)
 
         rospy.spin()
 
@@ -79,7 +81,7 @@ class TLDetector(object):
         self.lights = msg.lights
 
     def image_cb(self, msg):
-        global writer, frame_num
+        # global writer, frame_num
 
         """Identifies red lights in the incoming camera image and publishes the index
             of the waypoint closest to the red light's stop line to /traffic_waypoint
@@ -90,11 +92,9 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
+
         light_wp, state, approach = self.process_traffic_lights()
 
-        # Write frame name and corresponding state to CSV
-        writer.writerow(["left{:04d}.jpg".format(frame_num), state])
-        frame_num += 1
 
         '''
         Publish upcoming red lights at camera frequency.
@@ -157,7 +157,7 @@ class TLDetector(object):
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
         #Get classification
-        return self.light_classifier.get_classification(cv_image)
+        return self.light_classifier.get_classification(cv_image, self.is_site)
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -174,6 +174,7 @@ class TLDetector(object):
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
+
         if(self.pose and self.waypoint_tree):
             car_wp_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
@@ -195,10 +196,12 @@ class TLDetector(object):
             state = self.get_light_state(closest_light)
             approach = line_wp_idx - car_wp_idx
 
-            # rospy.logwarn("car_wp_idx: {}\tline_wp_idx: {}\tdelta: {}"
-            #     .format(car_wp_idx, line_wp_idx, line_wp_idx-car_wp_idx-10))
-
             return line_wp_idx, state, approach
+
+        if self.is_site:
+        	state = self.get_light_state(closest_light)
+
+        	return -1, state, approach
         
         return -1, TrafficLight.UNKNOWN, approach
 
