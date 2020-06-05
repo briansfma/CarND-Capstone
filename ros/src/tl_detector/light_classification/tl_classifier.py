@@ -18,7 +18,7 @@ class TLClassifier(object):
         MODEL_NAME = 'faster_rcnn_inception_v2_coco_2017_11_08'
 
         # Path to frozen detection graph. This is the actual model that is used for the object detection.
-        PATH_TO_FROZEN_GRAPH = 'models/research/' + MODEL_NAME + '/frozen_inference_graph.pb'
+        PATH_TO_FROZEN_GRAPH = MODEL_NAME + '/frozen_inference_graph.pb'
 
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
