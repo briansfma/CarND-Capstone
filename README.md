@@ -68,12 +68,12 @@ Lastly, the Traffic Light Detector reads known traffic light positions based on 
 
 The most difficult part of this project is the image processing, as the `base_waypoints` map provided by the simulator makes path planning and motion control mostly straightforward. Traffic lights are small objects in a car's camera view, so whether conventional image processing or machine learning is used to identify them, speed and robustness are a challenge. Some examples below, from both simulator output and the Udacity test lot:
 
-<img src="sim-frames/left0000.jpg" width="400"> <img src="sim-frames/left0085.jpg" width="400"> 
+<img src="sim-frames/left0000.jpg" width="400"> <img src="sim-frames/left0234.jpg" width="400"> 
 <img src="udacity-bag/test_images/image1.jpg" width="400"> <img src="udacity-bag/test_images/image5.jpg" width="400">
 
 I found that a pure OpenCV approach could be used to classify traffic lights in the simulator - while less applicable to real world, it worked much faster than a neural network with limited hardware resources on my local machine.
 
-<img src="sim-frames/processed/left0000.jpg" width="400"> <img src="sim-frames/processed/left0085.jpg" width="400">
+<img src="sim-frames/processed/left0000.jpg" width="400"> <img src="sim-frames/processed/left0234.jpg" width="400">
 
 The approach can be summed up as follows: 1) find edges, 2) find contours, 3) filter closed contours by circularity, 4) filter circles by center brightness relative to outside, 5) average the pixel values within the remaining circles. The car is able to accurately classify traffic lights from hundreds of meters away like this.
 
